@@ -1,6 +1,6 @@
 # InjecPro – Injection Production System
 
-InjecPro is a web-based system designed for plastic injection manufacturers to manage production costs and track inventory automatically based on logged output.
+InjecPro is a web-based system developed for plastic injection molding manufacturers to manage production costs and track inventory automatically based on logged output.
 
 ## 🔧 Technologies Used
 

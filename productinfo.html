@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InjecPro - Product Cost Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .logo {
+      max-height: 50px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-light bg-white shadow-sm mb-4">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="dashboard.html">
+        <img src="InjecPro-logo.png" alt="InjecPro Logo" class="logo me-2">
+        <span class="fs-4 fw-bold">Product Info & Cost</span>
+      </a>
+    </div>
+  </nav>
+
+  <div class="container mb-3">
+    <div class="d-flex justify-content-end">
+      <a href="addproduct.html" class="btn btn-primary">Add New Product</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card shadow">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0">Registered Products</h5>
+      </div>
+      <div class="card-body">
+        <table class="table table-bordered text-center">
+          <thead class="table-light">
+            <tr>
+              <th>Product Name</th>
+              <th>Client</th>
+              <th>Last Unit Cost (R$)</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="productTableBody">
+            <!-- Product rows will be dynamically inserted here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Example data - replace this with actual fetch from your backend
+    const products = [
+      { id: 1, name: "Plastic Cap", client: "ABC Ltd", cost: 0.3296 },
+      { id: 2, name: "Bottle Lid", client: "XYZ Corp", cost: 0.4789 }
+    ];
+
+    const tbody = document.getElementById("productTableBody");
+    products.forEach(product => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${product.name}</td>
+        <td>${product.client}</td>
+        <td>R$ ${product.cost.toFixed(4)}</td>
+        <td><a href="cost_calculator.html?productId=${product.id}" class="btn btn-sm btn-outline-primary">Edit</a></td>
+      `;
+      tbody.appendChild(row);
+    });
+  </script>
+</body>
+</html>
