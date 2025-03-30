@@ -2,6 +2,7 @@
     max-width: 350px;
     height: auto;
     font-size: large;
+    object-fit: contain;
   }
   .card {
     border-radius: 15px;
