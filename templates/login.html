@@ -48,13 +48,29 @@
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
 
-      // TODO: Replace with real API call to backend
-      if (username === "admin" && password === "password") {
-        alert("Login successful! (Mock)");
-        // Redirect to dashboard.html or similar
+      fetch('/api/login', {
+         method: 'POST',
+         headers: {
+          'Content-Type': 'application/json'
+        },
+       body: JSON.stringify({ username, password })
+      })
+     .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+    // Redirect to dashboard
+        window.location.href = data.redirect || '/dashboard';
       } else {
-        document.getElementById('loginError').classList.remove('d-none');
+       document.getElementById('loginError').classList.remove('d-none');
+       document.getElementById('loginError').textContent = data.message || 'Invalid credentials.';
       }
+     })
+    .catch(error => {
+     console.error('Error:', error);
+     document.getElementById('loginError').classList.remove('d-none');
+     document.getElementById('loginError').textContent = 'Something went wrong. Please try again.';
+   });
+
     });
   </script>
 

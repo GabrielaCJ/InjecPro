@@ -34,21 +34,21 @@
         <div class="card p-4 h-100">
           <h5 class="card-title">Product Info & Cost</h5>
           <p class="card-text">Create new or edit existing product cost calculations.</p>
-          <a href="productinfo.html"class="btn btn-primary w-100">Go to Product Cost</a>
+          <a href="{{ url_for('product_info') }}" class="btn btn-primary w-100">Go to Product Cost</a>
         </div>
       </div>
       <div class="col-md-6 col-lg-4">
         <div class="card p-4 h-100">
           <h5 class="card-title">Production Planner</h5>
           <p class="card-text">Calculate materials and hours needed for a target quantity.</p>
-          <a href="#" class="btn btn-secondary w-100">Plan Production</a>
+          <a href="{{ url_for('production_planner') }}" class="btn btn-secondary w-100">Plan Production</a>
         </div>
       </div>
       <div class="col-md-6 col-lg-4">
         <div class="card p-4 h-100">
           <h5 class="card-title">Inventory</h5>
           <p class="card-text">(Coming Soon) Add quantity injected daily base and monitor material stock.</p>
-          <a href="inventory.html" class="btn btn-info w-100 text-white">View Inventory</a>
+          <a href="{{ url_for('inventory') }}" class="btn btn-info w-100 text-white">View Inventory</a>
         </div>
       </div>
     </div>
