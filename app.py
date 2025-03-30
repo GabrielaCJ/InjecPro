@@ -70,6 +70,27 @@ def save_product_cost(product_id):
 
     return jsonify({"success": True})
 
+@app.route('/api/products', methods=['GET'])
+def get_products():
+    cursor.execute("""
+        SELECT id, name, client, last_unit_cost 
+        FROM products 
+        WHERE last_unit_cost IS NOT NULL AND last_unit_cost > 0
+    """)
+    rows = cursor.fetchall()
+
+    products = []
+    for row in rows:
+        products.append({
+            "id": row.id,
+            "name": row.name,
+            "client": row.client,
+            "cost": row.last_unit_cost
+        })
+
+    return jsonify(products)
+
+
 @app.route('/inventory')
 def inventory():
     return render_template('inventory.html')
