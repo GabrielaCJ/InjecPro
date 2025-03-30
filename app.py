@@ -28,9 +28,52 @@ def dashboard():
 def product_info():
     return render_template('productinfo.html')
 
+@app.route('/add-product')
+def add_product():
+    return render_template('addproduct.html')
+
+
+@app.route('/api/add-product', methods=['POST'])
+def api_add_product():
+    data = request.get_json()
+    name = data.get('productName')
+    client = data.get('client')
+
+    cursor.execute("INSERT INTO products (name, client) OUTPUT INSERTED.id VALUES (?, ?)", (name, client))
+    new_id = cursor.fetchone()[0]
+    conn.commit()
+
+    return jsonify({"success": True, "productId": new_id})
+
+
+@app.route('/cost-calculator')
+def cost_calculator():
+    return render_template('cost_calculator.html')
+
+
+@app.route('/api/products/<int:product_id>/save-cost', methods=['POST'])
+def save_product_cost(product_id):
+    data = request.get_json()
+
+    total_material = data.get('totalMaterialCost')
+    operational_cost = data.get('operationalCost')
+
+    # Optionally extract and save 'materials' and 'operational' fields too
+
+    cursor.execute("""
+        UPDATE products 
+        SET last_unit_cost = ? 
+        WHERE id = ?
+    """, (total_material + operational_cost, product_id))
+
+    conn.commit()
+
+    return jsonify({"success": True})
+
 @app.route('/inventory')
 def inventory():
     return render_template('inventory.html')
+
 
 @app.route('/planner')
 def production_planner():
