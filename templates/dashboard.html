@@ -18,6 +18,19 @@
     }
   </style>
 </head>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const userRole = localStorage.getItem('userRole');
+
+    if (userRole !== 'admin') {
+      // Hide all elements with class 'admin-only'
+      document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = 'none'; // or use el.remove() if you want to remove completely
+      });
+    }
+  });
+</script>
+
 <body>
   <nav class="navbar navbar-light bg-white shadow-sm mb-4">
     <div class="container">
@@ -27,17 +40,24 @@
       </a>
     </div>
   </nav>
-
+  <script>
+    const userRole = localStorage.getItem('userRole');
+  
+    // If not admin, hide all but inventory
+    if (userRole !== 'admin') {
+      document.querySelectorAll(".admin-only").forEach(el => el.remove());
+    }
+  </script>
   <div class="container">
     <div class="row g-4">
-      <div class="col-md-6 col-lg-4">
+      <div class="col-md-6 col-lg-4 admin-only">
         <div class="card p-4 h-100">
           <h5 class="card-title">Product Info & Cost</h5>
           <p class="card-text">Create new or edit existing product cost calculations.</p>
           <a href="{{ url_for('product_info') }}" class="btn btn-primary w-100">Go to Product Cost</a>
         </div>
       </div>
-      <div class="col-md-6 col-lg-4">
+      <div class="col-md-6 col-lg-4 admin-only">
         <div class="card p-4 h-100">
           <h5 class="card-title">Production Planner</h5>
           <p class="card-text">Calculate materials and hours needed for a target quantity.</p>

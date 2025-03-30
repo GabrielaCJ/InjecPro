@@ -43,37 +43,40 @@
 
   <!-- Optional JavaScript for form handling -->
   <script>
-    document.getElementById('loginForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-
-      fetch('/api/login', {
-         method: 'POST',
-         headers: {
-          'Content-Type': 'application/json'
-        },
-       body: JSON.stringify({ username, password })
-      })
-     .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-    // Redirect to dashboard
-        window.location.href = data.redirect || '/dashboard';
-      } else {
-       document.getElementById('loginError').classList.remove('d-none');
-       document.getElementById('loginError').textContent = data.message || 'Invalid credentials.';
-      }
-     })
-    .catch(error => {
-     console.error('Error:', error);
-     document.getElementById('loginError').classList.remove('d-none');
-     document.getElementById('loginError').textContent = 'Something went wrong. Please try again.';
-   });
-
+    document.addEventListener("DOMContentLoaded", function () {
+      document.getElementById('loginForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+  
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+  
+        fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // ✅ Corrected line: setItem (not getItem!)
+            localStorage.setItem('userRole', data.role); 
+            window.location.href = data.redirect || '/dashboard';
+          } else {
+            document.getElementById('loginError').classList.remove('d-none');
+            document.getElementById('loginError').textContent = data.message || 'Invalid credentials.';
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          document.getElementById('loginError').classList.remove('d-none');
+          document.getElementById('loginError').textContent = 'Something went wrong. Please try again.';
+        });
+      });
     });
   </script>
+  
 
 </body>
 </html>

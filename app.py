@@ -108,13 +108,18 @@ def login():
     username = data.get('username')
     password = data.get('password')
 
-    cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+    cursor.execute("SELECT id, username, role FROM users WHERE username=? AND password=?", (username, password))
     user = cursor.fetchone()
 
     if user:
-        return jsonify({"success": True, "redirect": url_for('dashboard')})
+        return jsonify({
+            "success": True,
+            "redirect": url_for('dashboard'),
+            "role": user.role  # ✅ send role to frontend
+        })
     else:
         return jsonify({"success": False, "message": "Invalid username or password"}), 401
+
 
 if __name__ == '__main__':
     app.run(debug=True)
