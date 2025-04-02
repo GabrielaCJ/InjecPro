@@ -47,9 +47,8 @@
       document.getElementById('loginForm').addEventListener('submit', function (e) {
         e.preventDefault();
   
-        const productName = document.getElementById("productName").value;
-        const client = document.getElementById("client").value;
-
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
   
         fetch('/api/login', {
           method: 'POST',
@@ -77,6 +76,7 @@
       });
     });
   </script>
+  
   
 
 </body>
