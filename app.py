@@ -4,12 +4,8 @@ import pyodbc
 app = Flask(__name__)
 
 # SQL Server connection
-conn_str = (
-    "Driver={ODBC Driver 17 for SQL Server};"
-    "Server=SrijanaPC;"
-    "Database=InjecPro;"
-    "Trusted_Connection=yes;"
-)
+conn_str = "Driver={ODBC Driver 17 for SQL Server};Server=SrijanaPC;Database=PlasticInjectionDB;Trusted_Connection=yes;Encrypt=no;TrustServerCertificate=yes;"
+
 
 conn = pyodbc.connect(conn_str)
 cursor = conn.cursor()
