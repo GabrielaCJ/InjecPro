@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,6 +36,7 @@
             <th>Description</th>
             <th>Qtde</th>
             <th>Unit Price (R$)</th>
+            <th>Usage Type</th>
             <th>Unit Cost (R$)</th>
           </tr>
         </thead>
@@ -46,49 +45,91 @@
             <td>Raw Material</td>
             <td><input type="number" step="0.0001" class="form-control qty" value="0.0130"></td>
             <td><input type="number" step="0.0001" class="form-control unit" value="14.2000"></td>
+            <td>
+              <select class="form-select usageType">
+                <option value="per_piece" selected>Per Piece</option>
+                <option value="per_units">Per X Units</option>
+              </select>
+            </td>
             <td class="subtotal">0.1846</td>
           </tr>
           <tr>
             <td>Master</td>
             <td><input type="number" step="0.0001" class="form-control qty" value="0.0003"></td>
             <td><input type="number" step="0.0001" class="form-control unit" value="26.0000"></td>
+            <td>
+              <select class="form-select usageType">
+                <option value="per_piece" selected>Per Piece</option>
+                <option value="per_units">Per X Units</option>
+              </select>
+            </td>
             <td class="subtotal">0.0068</td>
           </tr>
           <tr>
             <td>UV/Expanser</td>
             <td><input type="number" step="0.0001" class="form-control qty" value="0.0003"></td>
             <td><input type="number" step="0.0001" class="form-control unit" value="42.0000"></td>
+            <td>
+              <select class="form-select usageType">
+                <option value="per_piece" selected>Per Piece</option>
+                <option value="per_units">Per X Units</option>
+              </select>
+            </td>
             <td class="subtotal">0.0109</td>
           </tr>
           <tr>
             <td>Metal Insert</td>
             <td><input type="number" step="0.0001" class="form-control qty" value="1.0000"></td>
             <td><input type="number" step="0.0001" class="form-control unit" value="0.3000"></td>
+            <td>
+              <select class="form-select usageType">
+                <option value="per_piece" selected>Per Piece</option>
+                <option value="per_units">Per X Units</option>
+              </select>
+            </td>
             <td class="subtotal">0.3000</td>
           </tr>
           <tr>
             <td>Plastic Bag</td>
-            <td><input type="number" step="0.0001" class="form-control qty" value="1.0000"></td>
+            <td><input type="number" step="0.0001" class="form-control qty" value="200"></td>
             <td><input type="number" step="0.0001" class="form-control unit" value="0.0042"></td>
-            <td class="subtotal">0.0042</td>
+            <td>
+              <select class="form-select usageType">
+                <option value="per_piece">Per Piece</option>
+                <option value="per_units" selected>Per X Units</option>
+              </select>
+            </td>
+            <td class="subtotal">0.0000</td>
           </tr>
           <tr>
             <td>Cardboard Box</td>
-            <td><input type="number" step="0.0001" class="form-control qty" value="1.0000"></td>
+            <td><input type="number" step="0.0001" class="form-control qty" value="800"></td>
             <td><input type="number" step="0.0001" class="form-control unit" value="0.0104"></td>
-            <td class="subtotal">0.0104</td>
+            <td>
+              <select class="form-select usageType">
+                <option value="per_piece">Per Piece</option>
+                <option value="per_units" selected>Per X Units</option>
+              </select>
+            </td>
+            <td class="subtotal">0.0000</td>
           </tr>
           <tr>
             <td>Pallet/Separator/Durex Tape</td>
-            <td><input type="number" step="0.0001" class="form-control qty" value="1.0000"></td>
+            <td><input type="number" step="0.0001" class="form-control qty" value="800"></td>
             <td><input type="number" step="0.0001" class="form-control unit" value="0.0016"></td>
-            <td class="subtotal">0.0016</td>
+            <td>
+              <select class="form-select usageType">
+                <option value="per_piece">Per Piece</option>
+                <option value="per_units" selected>Per X Units</option>
+              </select>
+            </td>
+            <td class="subtotal">0.0000</td>
           </tr>
         </tbody>
         <tfoot>
           <tr class="table-light">
-            <th colspan="3" class="text-end">Raw Material Total:</th>
-            <th id="totalMaterial">0.5185</th>
+            <th colspan="4" class="text-end">Raw Material Total:</th>
+            <th id="totalMaterial">0.0000</th>
           </tr>
         </tfoot>
       </table>
@@ -132,7 +173,7 @@
     </div>
   </div>
 
-  <!-- Custo Industrial Section -->
+  <!-- Industrial Cost Section -->
   <div class="card shadow">
     <div class="card-header bg-dark text-white">Industrial Cost</div>
     <div class="card-body">
@@ -146,18 +187,11 @@
       </div>
     </div>
   </div>
+  <!-- Save Button -->
+  <div class="d-flex justify-content-center mt-4">
+    <button class="btn btn-success" onclick="saveProductCost()">Save Product Cost</button>
+  </div>
 </div>
-
- <!-- Save Button -->
- <div class="d-flex justify-content-center mt-4">
-  <button class="btn btn-success" onclick="saveProductCost()">Save Product Cost</button>
-</div>
-</div>
-
-<script>
-  const productId = "{{ product_id }}";
-  // Use it in your JS...
-</script>
 
 <script>
 function calculateMaterialCost() {
@@ -166,7 +200,13 @@ function calculateMaterialCost() {
   rows.forEach(row => {
     const qty = parseFloat(row.querySelector(".qty").value) || 0;
     const unit = parseFloat(row.querySelector(".unit").value) || 0;
-    const subtotal = qty * unit;
+    const usageType = row.querySelector(".usageType").value;
+    let subtotal = 0;
+    if (usageType === "per_piece") {
+      subtotal = qty * unit;
+    } else if (usageType === "per_units") {
+      subtotal = (1 / qty) * unit;
+    }
     row.querySelector(".subtotal").textContent = subtotal.toFixed(4);
     total += subtotal;
   });
@@ -175,60 +215,51 @@ function calculateMaterialCost() {
 }
 
 function calculateOperationalCost() {
-  const ciclo = parseFloat(document.getElementById("ciclo").value) || 1;
-  const cav = parseFloat(document.getElementById("numCav").value) || 1;
-  const eficiencia = parseFloat(document.getElementById("efficiency").value) || 100;
-  const taxa = parseFloat(document.getElementById("rate").value) || 0;
+  const cycle = parseFloat(document.getElementById("cycle").value) || 1;
+  const cavities = parseFloat(document.getElementById("numCav").value) || 1;
+  const efficiency = parseFloat(document.getElementById("efficiency").value) || 100;
+  const rate = parseFloat(document.getElementById("rate").value) || 0;
 
-  const pecasHora = (3600 / ciclo) * cav;
-  const custo = (taxa / pecasHora) / (eficiencia / 100);
+  const unitsPerHour = (3600 / cycle) * cavities;
+  const cost = (rate / unitsPerHour) / (efficiency / 100);
 
-  document.getElementById("unitshour").value = pecasHora.toFixed(2);
-  document.getElementById("operationalcost").value = custo.toFixed(4);
+  document.getElementById("unitshour").value = unitsPerHour.toFixed(2);
+  document.getElementById("operationalcost").value = cost.toFixed(4);
   calculateIndustrialCost();
 }
 
 function calculateIndustrialCost() {
   const material = parseFloat(document.getElementById("totalMaterial").textContent) || 0;
-  const operacional = parseFloat(document.getElementById("operationalcost").value) || 0;
-  document.getElementById("industrialcost").value = (material + operacional).toFixed(4);
+  const operational = parseFloat(document.getElementById("operationalcost").value) || 0;
+  document.getElementById("industrialcost").value = (material + operational).toFixed(4);
 }
 
-document.querySelectorAll(".qty, .unit").forEach(input => {
-  input.addEventListener("input", calculateMaterialCost);
-});
-
-["cycle", "numCav", "efficiency", "rate"].forEach(id => {
-  document.getElementById(id).addEventListener("input", calculateOperationalCost);
-});
-
-calculateMaterialCost();
-calculateOperationalCost();
-
 function saveProductCost() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const productId = urlParams.get("productId");
-  if (!productId) return alert("Missing Product ID");
+  const productId = new URLSearchParams(window.location.search).get("productId");
+  if (!productId) return alert("Missing product ID");
 
   const materials = Array.from(document.querySelectorAll("#materialTable tbody tr")).map(row => ({
-    materialName: row.cells[0].innerText.trim(),
+    description: row.cells[0].innerText.trim(),
     quantity: parseFloat(row.querySelector(".qty").value) || 0,
-    unitCost: parseFloat(row.querySelector(".unit").value) || 0
+    unitPrice: parseFloat(row.querySelector(".unit").value) || 0,
+    usageType: row.querySelector(".usageType").value
   }));
 
   const operational = {
-    injectionTon: parseInt(document.getElementById("injTon").value) || 0,
-    numCavities: parseInt(document.getElementById("numCav").value) || 0,
-    cycleTimeSec: parseInt(document.getElementById("cycle").value) || 0,
-    efficiencyPercent: parseFloat(document.getElementById("efficiency").value) || 0,
-    hourlyRate: parseFloat(document.getElementById("rate").value) || 0
+    injTon: parseFloat(document.getElementById("injTon").value) || 0,
+    numCav: parseFloat(document.getElementById("numCav").value) || 0,
+    cycle: parseFloat(document.getElementById("cycle").value) || 0,
+    efficiency: parseFloat(document.getElementById("efficiency").value) || 0,
+    rate: parseFloat(document.getElementById("rate").value) || 0
   };
 
   const payload = {
+    productId,
     materials,
     operational,
-    totalMaterialCost: parseFloat(document.getElementById("totalMaterial").textContent) || 0,
-    operationalCost: parseFloat(document.getElementById("operationalcost").value) || 0
+    totalMaterialCost: parseFloat(document.getElementById("totalMaterial").textContent),
+    operationalCost: parseFloat(document.getElementById("operationalcost").value),
+    industrialCost: parseFloat(document.getElementById("industrialcost").value)
   };
 
   fetch(`/api/products/${productId}/save-cost`, {
@@ -236,12 +267,24 @@ function saveProductCost() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   })
-  .then(res => {
-    if (res.ok) alert("Product cost saved successfully!");
-    else throw new Error("Save failed");
+  .then(response => {
+    if (!response.ok) throw new Error("Failed to save");
+    alert("Product cost saved successfully!");
+    window.location.href = "/productinfo";
   })
   .catch(err => alert("Error: " + err.message));
 }
+
+setTimeout(() => {
+  document.querySelectorAll(".qty, .unit, .usageType").forEach(input => {
+    input.addEventListener("input", calculateMaterialCost);
+  });
+  ["cycle", "numCav", "efficiency", "rate"].forEach(id => {
+    document.getElementById(id).addEventListener("input", calculateOperationalCost);
+  });
+  calculateMaterialCost();
+  calculateOperationalCost();
+});
 </script>
 </body>
 </html>
