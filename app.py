@@ -6,7 +6,7 @@ app = Flask(__name__)
 # SQL Server connection
 conn_str = (
     "Driver={ODBC Driver 17 for SQL Server};"
-    "Server=SrijanaPC;"
+    "Server=DESKTOP-5QMBS32;"
     "Database=InjecPro;"
     "Trusted_Connection=yes;"
 )
