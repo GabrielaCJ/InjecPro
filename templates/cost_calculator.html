@@ -239,11 +239,13 @@ function saveProductCost() {
   if (!productId) return alert("Missing product ID");
 
   const materials = Array.from(document.querySelectorAll("#materialTable tbody tr")).map(row => ({
-    description: row.cells[0].innerText.trim(),
-    quantity: parseFloat(row.querySelector(".qty").value) || 0,
-    unitPrice: parseFloat(row.querySelector(".unit").value) || 0,
-    usageType: row.querySelector(".usageType").value
-  }));
+  description: row.cells[0].innerText.trim(),
+  quantity: parseFloat(row.querySelector(".qty").value) || 0,
+  unitPrice: parseFloat(row.querySelector(".unit").value) || 0,
+  usageType: row.querySelector(".usageType").value,
+  unitCost: parseFloat(row.querySelector(".subtotal").textContent) || 0
+}));
+
 
   const operational = {
     injTon: parseFloat(document.getElementById("injTon").value) || 0,
@@ -275,16 +277,47 @@ function saveProductCost() {
   .catch(err => alert("Error: " + err.message));
 }
 
-setTimeout(() => {
+async function loadCostData() {
+  const productId = new URLSearchParams(window.location.search).get("productId");
+  if (!productId) return;
+
+  try {
+    const res = await fetch(`/api/products/${productId}/load-cost`);
+    const data = await res.json();
+
+    const rows = document.querySelectorAll("#materialTable tbody tr");
+    data.materials.forEach((mat, index) => {
+      const row = rows[index];
+      if (!row) return;
+      row.querySelector(".qty").value = mat.quantity;
+      row.querySelector(".unit").value = mat.unitPrice;
+      row.querySelector(".usageType").value = mat.usageType;
+      row.querySelector(".subtotal").textContent = mat.unitCost.toFixed(4);
+    });
+
+    document.getElementById("injTon").value = data.operational.injTon || 0;
+    document.getElementById("numCav").value = data.operational.numCav || 0;
+    document.getElementById("cycle").value = data.operational.cycle || 0;
+    document.getElementById("efficiency").value = data.operational.efficiency || 0;
+    document.getElementById("rate").value = data.operational.rate || 0;
+
+    calculateMaterialCost();
+    calculateOperationalCost();
+  } catch (err) {
+    console.error("Error loading product cost data:", err);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadCostData();
   document.querySelectorAll(".qty, .unit, .usageType").forEach(input => {
     input.addEventListener("input", calculateMaterialCost);
   });
   ["cycle", "numCav", "efficiency", "rate"].forEach(id => {
     document.getElementById(id).addEventListener("input", calculateOperationalCost);
   });
-  calculateMaterialCost();
-  calculateOperationalCost();
 });
+
 </script>
 </body>
 </html>
