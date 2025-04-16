@@ -1,7 +1,8 @@
 from flask import Flask, request, jsonify, render_template, url_for
 import pyodbc
 from datetime import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
+import bcrypt
+
 
 
 
@@ -327,10 +328,6 @@ def production_planner():
     return render_template('planner.html')
 
 
-import bcrypt
-
-import bcrypt
-
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -352,6 +349,35 @@ def login():
 
     return jsonify({"success": False, "message": "Invalid credentials"}), 401
 
+@app.route('/signup')
+def signup_page():
+    return render_template('signup.html')
+
+
+@app.route('/api/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    role = data.get('role')
+
+    if not username or not password or not role:
+        return jsonify({"success": False, "message": "All fields are required."})
+
+    # Check if username already exists
+    cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+    if cursor.fetchone():
+        return jsonify({"success": False, "message": "Username already exists."})
+
+    hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+    cursor.execute(
+        "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+        (username, hashed_pw, role)
+    )
+    conn.commit()
+
+    return jsonify({"success": True})
 
 if __name__ == '__main__':
     app.run(debug=True)
