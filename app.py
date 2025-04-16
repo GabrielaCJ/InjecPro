@@ -4,8 +4,6 @@ from datetime import datetime
 import bcrypt
 
 
-
-
 app = Flask(__name__)
 
 # SQL Server connection
@@ -378,6 +376,7 @@ def signup():
     conn.commit()
 
     return jsonify({"success": True})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
