@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify, render_template, url_for
 import pyodbc
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 
 app = Flask(__name__)
@@ -170,6 +172,7 @@ def planner_save():
     data = request.get_json()
     product_id = data.get('product_id')
     quantity = data.get('quantity_to_produce')
+
     hours = data.get('estimated_hours')
     materials = data.get('materials')
 
@@ -324,24 +327,30 @@ def production_planner():
     return render_template('planner.html')
 
 
-# Login API
+import bcrypt
+
+import bcrypt
+
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
 
-    cursor.execute("SELECT id, username, role FROM users WHERE username=? AND password=?", (username, password))
+    cursor.execute("SELECT id, username, password, role FROM users WHERE username = ?", (username,))
     user = cursor.fetchone()
 
     if user:
-        return jsonify({
-            "success": True,
-            "redirect": url_for('dashboard'),
-            "role": user.role  # ✅ send role to frontend
-        })
-    else:
-        return jsonify({"success": False, "message": "Invalid username or password"}), 401
+        stored_hash = user[2]  # password is at index 2
+        
+        if bcrypt.checkpw(password.encode(), stored_hash.encode()):
+            return jsonify({
+                "success": True,
+                "redirect": url_for('dashboard'),
+                "role": user[3]  # role at index 3
+            })
+
+    return jsonify({"success": False, "message": "Invalid credentials"}), 401
 
 
 if __name__ == '__main__':
