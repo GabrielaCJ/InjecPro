@@ -75,50 +75,96 @@
     </div>
   </div>
 
-<script>
-function calculatePlan() {
-  const productId = document.getElementById("productSelect").value;
-  const quantity = document.getElementById("quantityInput").value;
-  if (!productId || !quantity) return alert("Please select a product and quantity.");
-
-  // Placeholder logic until integrated
-  const materials = [
-    { name: "Raw Material", quantity: (0.013 * quantity).toFixed(4) },
-    { name: "Plastic Bag", quantity: Math.ceil(quantity / 200) },
-    { name: "Cardboard Box", quantity: Math.ceil(quantity / 800) },
-  ];
-
-  const unitHour = 900; // Simulated units/hour from operational data
-  const estimatedHours = (quantity / unitHour).toFixed(2);
-
-  const tbody = document.getElementById("materialTable");
-  tbody.innerHTML = "";
-  materials.forEach(mat => {
-    tbody.innerHTML += `<tr><td>${mat.name}</td><td>${mat.quantity}</td></tr>`;
-  });
-
-  document.getElementById("estimatedHours").textContent = estimatedHours;
-}
-
-function sendToInventory() {
-  alert("Production plan sent to inventory (simulated save). Integration coming soon.");
-}
-
-window.onload = () => {
-  fetch('/api/products')
-    .then(res => res.json())
-    .then(data => {
-      const select = document.getElementById("productSelect");
-      select.innerHTML = '<option value="" disabled selected>Select a product</option>';
-      data.forEach(p => {
-        select.innerHTML += `<option value="${p.id}">${p.name} - ${p.client}</option>`;
-      });
-    })
-    .catch(err => {
-      console.error("Failed to load products", err);
-      document.getElementById("productSelect").innerHTML = '<option disabled>Error loading products</option>';
-    });
-}
-</script>
+  <script>
+    function calculatePlan() {
+      const productId = document.getElementById("productSelect").value;
+      const quantity = parseFloat(document.getElementById("quantityInput").value);
+      if (!productId || !quantity) return alert("Please select a product and quantity.");
+    
+      fetch(`/api/planner/${productId}`)
+        .then(res => res.json())
+        .then(data => {
+          const materials = data.materials;
+          const unitsPerHour = data.unitsPerHour || 1;
+    
+          const estimatedHours = (quantity / unitsPerHour).toFixed(2);
+          document.getElementById("estimatedHours").textContent = estimatedHours;
+    
+          const tbody = document.getElementById("materialTable");
+          tbody.innerHTML = "";
+    
+          materials.forEach(mat => {
+            let requiredQty = 0;
+            if (mat.usageType === "per_piece") {
+              requiredQty = quantity * mat.quantity;
+            } else if (mat.usageType === "per_units") {
+              requiredQty = Math.ceil(quantity / mat.quantity);
+            }
+    
+            tbody.innerHTML += `<tr>
+              <td>${mat.description}</td>
+              <td>${requiredQty.toFixed(4)}</td>
+            </tr>`;
+            mat.requiredQty = requiredQty;
+          });
+    
+          // Save data for sending
+          window.currentPlan = {
+            product_id: parseInt(productId),
+            quantity_to_produce: quantity,
+            estimated_hours: estimatedHours,
+            materials: materials.map(m => ({
+              description: m.description,
+              quantity: m.requiredQty
+            }))
+          };
+        })
+        .catch(err => {
+          console.error("Error calculating plan", err);
+          alert("Failed to calculate. Try again.");
+        });
+    }
+    
+    function sendToInventory() {
+      if (!window.currentPlan) {
+        return alert("Please calculate the plan first.");
+      }
+    
+      fetch("/api/inventory/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(window.currentPlan)
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert("Production plan successfully added to inventory.");
+            window.location.href = "/inventory";
+          } else {
+            throw new Error("Save failed");
+          }
+        })
+        .catch(err => {
+          console.error("Save error", err);
+          alert("Failed to save production plan.");
+        });
+    }
+    
+    window.onload = () => {
+      fetch('/api/products')
+        .then(res => res.json())
+        .then(data => {
+          const select = document.getElementById("productSelect");
+          select.innerHTML = '<option value="" disabled selected>Select a product</option>';
+          data.forEach(p => {
+            select.innerHTML += `<option value="${p.id}">${p.name} - ${p.client}</option>`;
+          });
+        })
+        .catch(err => {
+          console.error("Failed to load products", err);
+          document.getElementById("productSelect").innerHTML = '<option disabled>Error loading products</option>';
+        });
+    }
+    </script>
 </body>
 </html>
