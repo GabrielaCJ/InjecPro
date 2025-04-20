@@ -204,7 +204,7 @@ def production_summary():
 def log_production():
     try:
         data = request.get_json()
-        print(" Production log received:", data)
+        print("📥 Production log received:", data)
 
         plan_id = int(data.get('plan_id'))
         quantity = int(data.get('quantity'))
@@ -217,41 +217,45 @@ def log_production():
         return jsonify({"success": True})
 
     except pyodbc.Error as e:
-        print(" Production Log Error:", e)
+        print("❌ Production Log Error:", e)
         return jsonify({"success": False, "message": str(e)}), 500
 
 
 @app.route('/api/delete-plan/<int:inventory_id>', methods=['DELETE'])
 def delete_production_plan(inventory_id):
     try:
-        cursor.execute("EXEC DeleteProductionPlan ?", (inventory_id,))
+        cursor.execute("DELETE FROM production_logs WHERE inventory_id = ?", inventory_id)
+        cursor.execute("DELETE FROM inventory WHERE id = ?", inventory_id)
         conn.commit()
         return jsonify({"success": True})
     except Exception as e:
-        print(" Deletion Error:", e)
+        print("❌ Deletion Error:", e)
         return jsonify({"success": False, "message": str(e)}), 500
-
 
 @app.route('/api/products', methods=['GET'])
 def get_products():
-    try:
-        cursor.execute("EXEC GetAllProductsWithCost")
-        rows = cursor.fetchall()
+    cursor.execute("""
+        SELECT id, name, client, last_unit_cost 
+        FROM products 
+        WHERE last_unit_cost IS NOT NULL AND last_unit_cost > 0
+    """)
+    rows = cursor.fetchall()
 
-        products = []
-        for row in rows:
-            products.append({
-                "id": row.id,
-                "name": row.name,
-                "client": row.client,
-                "cost": row.last_unit_cost
-            })
+    products = []
+    for row in rows:
+        products.append({
+            "id": row.id,
+            "name": row.name,
+            "client": row.client,
+            "cost": row.last_unit_cost
+        })
 
-        return jsonify(products)
+    return jsonify(products)
 
-    except Exception as e:
-        print(" Product Fetch Error:", e)
-        return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/inventory')
+def inventory():
+    return render_template('inventory.html')
 
 
 @app.route('/planner')
