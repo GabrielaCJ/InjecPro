@@ -144,34 +144,36 @@ def planner_fetch(product_id):
 
 @app.route('/api/inventory/add', methods=['POST'])
 def planner_save():
-    data = request.get_json()
-    product_id = data.get('product_id')
-    quantity = data.get('quantity_to_produce')
+    try:
+        data = request.get_json()
+        product_id = data.get('product_id')
+        quantity = data.get('quantity_to_produce')
+        hours = data.get('estimated_hours')
+        materials = data.get('materials')
 
-    hours = data.get('estimated_hours')
-    materials = data.get('materials')
-
-    cursor.execute("""
-        INSERT INTO production_plans (product_id, target_quantity, estimated_hours, created_at)
-        OUTPUT INSERTED.id
-        VALUES (?, ?, ?, ?)
-    """, (product_id, quantity, hours, datetime.now()))
-
-    plan_id = cursor.fetchone()[0]
-
-    for mat in materials:
+        # Call stored procedure to insert production plan
         cursor.execute("""
-            INSERT INTO production_plan_materials (production_plan_id, material_description, required_quantity)
-            VALUES (?, ?, ?)
-        """, (plan_id, mat['description'], mat['quantity']))
+            DECLARE @PlanID INT;
+            EXEC CreateProductionPlan ?, ?, ?, @PlanID OUTPUT;
+            SELECT @PlanID;
+        """, (product_id, quantity, hours))
 
-    cursor.execute("""
-        INSERT INTO inventory (product_id, quantity_to_produce, estimated_hours, created_at)
-        VALUES (?, ?, ?, ?)
-    """, (product_id, quantity, hours, datetime.now()))
+        plan_id = cursor.fetchone()[0]
 
-    conn.commit()
-    return jsonify({"success": True})
+        # Insert materials using the new plan ID
+        for mat in materials:
+            cursor.execute("""
+                INSERT INTO production_plan_materials (production_plan_id, material_description, required_quantity)
+                VALUES (?, ?, ?)
+            """, (plan_id, mat['description'], mat['quantity']))
+
+        conn.commit()
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print(" Planner Save Error:", e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
 
 @app.route('/api/production-summary', methods=['GET'])
 def production_summary():
