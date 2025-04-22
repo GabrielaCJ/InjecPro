@@ -7,7 +7,7 @@ import bcrypt
 app = Flask(__name__)
 
 # SQL Server connection
-conn_str = "Driver={ODBC Driver 17 for SQL Server};Server=SRIJANAPC\\MSSQLSERVER02;Database=InjecPro;Trusted_Connection=yes;Encrypt=no;TrustServerCertificate=yes;"
+conn_str = "Driver={ODBC Driver 17 for SQL Server};Server=DESKTOP-5QMBS32;Database=InjecPro;Trusted_Connection=yes;Encrypt=no;TrustServerCertificate=yes;"
 
 
 conn = pyodbc.connect(conn_str)
