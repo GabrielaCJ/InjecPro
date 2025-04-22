@@ -216,7 +216,7 @@ def log_production():
         plan_id = int(data.get('plan_id'))
         quantity = int(data.get('quantity'))
         hours = float(data.get('hours'))
-        user_id = 5  # placeholder or get from session/token later
+        user_id = session.get('user_id', 5)  # placeholder or get from session/token later
 
         cursor.execute("EXEC LogProductionEntry ?, ?, ?, ?", (plan_id, quantity, hours, user_id))
         conn.commit()
