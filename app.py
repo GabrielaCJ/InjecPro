@@ -6,6 +6,11 @@ import bcrypt
 
 app = Flask(__name__)
 
+app.secret_key = 'supersecretkey123!'  # 👈 Replace this with something unique and strong
+
+import os
+app.secret_key = os.environ.get('SECRET_KEY', 'default-dev-key')
+
 # SQL Server connection
 conn_str = "Driver={ODBC Driver 17 for SQL Server};Server=SRIJANAPC\\MSSQLSERVER02;Database=InjecPro;Trusted_Connection=yes;Encrypt=no;TrustServerCertificate=yes;"
 
@@ -211,7 +216,7 @@ def log_production():
         plan_id = int(data.get('plan_id'))
         quantity = int(data.get('quantity'))
         hours = float(data.get('hours'))
-        user_id = 1  # placeholder or get from session/token later
+        user_id = 5  # placeholder or get from session/token later
 
         cursor.execute("EXEC LogProductionEntry ?, ?, ?, ?", (plan_id, quantity, hours, user_id))
         conn.commit()
@@ -265,6 +270,12 @@ def production_planner():
     return render_template('planner.html')
 
 
+from flask import session
+
+app.secret_key = 'your-secret-key'  # Add this near the top of your app.py
+
+from flask import session
+
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -286,6 +297,7 @@ def login():
             })
 
     return jsonify({"success": False, "message": "Invalid credentials"}), 401
+
 
 
 @app.route('/signup')
