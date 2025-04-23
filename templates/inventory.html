@@ -158,11 +158,11 @@
     document.getElementById("dailyProductionForm").addEventListener("submit", function (e) {
       e.preventDefault();
 
-      const planId = document.getElementById("productSelect").value;
+      const inventoryId = document.getElementById("productSelect").value;
       const qty = document.getElementById("producedQty").value;
       const hours = document.getElementById("workedHours").value;
 
-      if (!planId || !qty || !hours) {
+      if (!inventoryId || !qty || !hours) {
         alert("Please fill all fields.");
         return;
       }
@@ -170,7 +170,7 @@
       fetch("/api/inventory-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan_id: Number(planId), quantity: Number(qty), hours: Number(hours) })
+        body: JSON.stringify({ inventory_id: Number(inventoryId), quantity: Number(qty), hours: Number(hours) })
       })
         .then(res => {
           if (!res.ok) throw new Error("Failed to save");
@@ -179,7 +179,6 @@
         })
         .catch(err => alert("Error: " + err.message));
     });
-
 
     window.onload = loadProductionSummary;
   </script>

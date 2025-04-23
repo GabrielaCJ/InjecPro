@@ -1,14 +1,17 @@
 from flask import Flask, request, jsonify, render_template, url_for
 import pyodbc
 from datetime import datetime
-import bcrypt
 
 
 app = Flask(__name__)
 
 # SQL Server connection
-conn_str = "Driver={ODBC Driver 17 for SQL Server};Server=DESKTOP-5QMBS32;Database=InjecPro;Trusted_Connection=yes;Encrypt=no;TrustServerCertificate=yes;"
-
+conn_str = (
+    "Driver={ODBC Driver 17 for SQL Server};"
+    "Server=DESKTOP-5QMBS32;"
+    "Database=InjecPro;"
+    "Trusted_Connection=yes;"
+)
 
 conn = pyodbc.connect(conn_str)
 cursor = conn.cursor()
@@ -88,12 +91,10 @@ def save_product_cost(product_id):
         materials = data.get('materials', [])
         operational = data.get('operational', {})
 
-        # Delete & insert updated materials
         cursor.execute("DELETE FROM product_materials WHERE product_id = ?", product_id)
         for material in materials:
             cursor.execute("""
-                INSERT INTO product_materials 
-                (product_id, description, quantity, unit_price, usage_type, unit_cost_per_piece)
+                INSERT INTO product_materials (product_id, description, quantity, unit_price, usage_type, unit_cost_per_piece)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (
                 product_id,
@@ -101,31 +102,57 @@ def save_product_cost(product_id):
                 material['quantity'],
                 material['unitPrice'],
                 material['usageType'],
-                material['unitCost']
+                material['unitCost']  # ✅ Make sure this field exists in the payload
             ))
 
-        # Now call the stored procedure to handle operational + history
+        cursor.execute("DELETE FROM product_operational_costs WHERE product_id = ?", product_id)
+
+        # Calculate units/hour and cost/unit
+        cycle = operational.get('cycle') or 1
+        cavities = operational.get('numCav') or 1
+        efficiency = operational.get('efficiency') or 100
+        rate = operational.get('rate') or 0
+
+        units_per_hour = (3600 / cycle) * cavities
+        cost_per_unit = (rate / units_per_hour) / (efficiency / 100)
+
         cursor.execute("""
-            EXEC SaveOperationalCostAndHistory 
-                ?, ?, ?, ?, ?, ?, ?, ?
+            INSERT INTO product_operational_costs 
+            (product_id, injection_ton, num_cavities, cycle_time_sec, efficiency_percent, hourly_rate, units_per_hour, cost_per_unit)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             product_id,
             operational.get('injTon'),
-            operational.get('numCav') or 1,
-            operational.get('cycle') or 1,
-            operational.get('efficiency') or 100,
-            operational.get('rate') or 0,
-            total_material,
-            operational_cost
+            cavities,
+            cycle,
+            efficiency,
+            rate,
+            units_per_hour,
+            cost_per_unit
         ))
+
+        cursor.execute("""
+            INSERT INTO product_cost_history (product_id, material_cost, operational_cost, total_cost)
+            VALUES (?, ?, ?, ?)
+        """, (
+            product_id,
+            total_material,
+            operational_cost,
+            total_material + operational_cost
+        ))
+
+        cursor.execute("""
+            UPDATE products 
+            SET last_unit_cost = ? 
+            WHERE id = ?
+        """, (total_material + operational_cost, product_id))
 
         conn.commit()
         return jsonify({"success": True})
-
+    
     except Exception as e:
         print("❌ ERROR during save:", str(e))
         return jsonify({"success": False, "error": str(e)}), 500
-
 
 @app.route('/api/planner/<int:product_id>', methods=['GET'])
 def planner_fetch(product_id):
@@ -144,63 +171,78 @@ def planner_fetch(product_id):
 
 @app.route('/api/inventory/add', methods=['POST'])
 def planner_save():
-    try:
-        data = request.get_json()
-        product_id = data.get('product_id')
-        quantity = data.get('quantity_to_produce')
-        hours = data.get('estimated_hours')
-        materials = data.get('materials')
+    data = request.get_json()
+    product_id = data.get('product_id')
+    quantity = data.get('quantity_to_produce')
+    hours = data.get('estimated_hours')
+    materials = data.get('materials')
 
-        # Call stored procedure to insert production plan
+    cursor.execute("""
+        INSERT INTO production_plans (product_id, target_quantity, estimated_hours, created_at)
+        OUTPUT INSERTED.id
+        VALUES (?, ?, ?, ?)
+    """, (product_id, quantity, hours, datetime.now()))
+
+    plan_id = cursor.fetchone()[0]
+
+    for mat in materials:
         cursor.execute("""
-            DECLARE @PlanID INT;
-            EXEC CreateProductionPlan ?, ?, ?, @PlanID OUTPUT;
-            SELECT @PlanID;
-        """, (product_id, quantity, hours))
+            INSERT INTO production_plan_materials (production_plan_id, material_description, required_quantity)
+            VALUES (?, ?, ?)
+        """, (plan_id, mat['description'], mat['quantity']))
 
-        plan_id = cursor.fetchone()[0]
+    cursor.execute("""
+        INSERT INTO inventory (product_id, quantity_to_produce, estimated_hours, created_at)
+        VALUES (?, ?, ?, ?)
+    """, (product_id, quantity, hours, datetime.now()))
 
-        # Insert materials using the new plan ID
-        for mat in materials:
-            cursor.execute("""
-                INSERT INTO production_plan_materials (production_plan_id, material_description, required_quantity)
-                VALUES (?, ?, ?)
-            """, (plan_id, mat['description'], mat['quantity']))
-
-        conn.commit()
-        return jsonify({"success": True})
-
-    except Exception as e:
-        print(" Planner Save Error:", e)
-        return jsonify({"success": False, "message": str(e)}), 500
-
+    conn.commit()
+    return jsonify({"success": True})
 
 @app.route('/api/production-summary', methods=['GET'])
 def production_summary():
-    try:
-        cursor.execute("EXEC GetProductionSummary")
-        rows = cursor.fetchall()
+    cursor.execute("""
+        SELECT 
+            i.id AS inventory_id,
+            p.name AS product,
+            p.client,
+            i.quantity_to_produce,
+            i.estimated_hours,
+            i.created_at
+        FROM inventory i
+        JOIN products p ON i.product_id = p.id
+        ORDER BY i.created_at DESC
+    """)
+    inventories = cursor.fetchall()
 
-        summary = []
-        for row in rows:
-            summary.append({
-                "inventory_id": row.inventory_id,
-                "product": row.product,
-                "client": row.client,
-                "planned_qty": row.planned_qty,
-                "produced_qty": row.produced_qty,
-                "remaining_qty": max(row.remaining_qty, 0),
-                "planned_hours": row.planned_hours,
-                "worked_hours": row.worked_hours,
-                "status": row.status
-            })
+    summary = []
+    for inv in inventories:
+        cursor.execute("""
+            SELECT 
+                ISNULL(SUM(quantity_produced), 0) AS total_qty,
+                ISNULL(SUM(hours_worked), 0) AS total_hours
+            FROM production_logs
+            WHERE inventory_id = ?
+        """, inv.inventory_id)
+        logs = cursor.fetchone()
 
-        return jsonify(summary)
+        produced = logs.total_qty
+        worked = logs.total_hours
+        remaining = inv.quantity_to_produce - produced
 
-    except Exception as e:
-        print(" Production Summary Error:", e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        summary.append({
+            "inventory_id": inv.inventory_id,
+            "product": inv.product,
+            "client": inv.client,
+            "planned_qty": inv.quantity_to_produce,
+            "produced_qty": produced,
+            "remaining_qty": max(remaining, 0),
+            "planned_hours": inv.estimated_hours,
+            "worked_hours": worked,
+            "status": "Completed" if produced >= inv.quantity_to_produce else "In Progress"
+        })
 
+    return jsonify(summary)
 
 @app.route('/api/inventory-log', methods=['POST'])
 def log_production():
@@ -208,20 +250,21 @@ def log_production():
         data = request.get_json()
         print("📥 Production log received:", data)
 
-        plan_id = int(data.get('plan_id'))
+        inventory_id = int(data.get('inventory_id'))  # 🛠️ This needs to match your payload key
         quantity = int(data.get('quantity'))
         hours = float(data.get('hours'))
-        user_id = 1  # placeholder or get from session/token later
+        user_id = 1006  # Temporary hardcoded user
 
-        cursor.execute("EXEC LogProductionEntry ?, ?, ?, ?", (plan_id, quantity, hours, user_id))
+        cursor.execute("""
+            INSERT INTO production_logs (inventory_id, user_id, date_logged, quantity_produced, hours_worked)
+            VALUES (?, ?, GETDATE(), ?, ?)
+        """, (inventory_id, user_id, quantity, hours))
+
         conn.commit()
-
         return jsonify({"success": True})
-
-    except pyodbc.Error as e:
+    except Exception as e:
         print("❌ Production Log Error:", e)
         return jsonify({"success": False, "message": str(e)}), 500
-
 
 @app.route('/api/delete-plan/<int:inventory_id>', methods=['DELETE'])
 def delete_production_plan(inventory_id):
@@ -265,58 +308,24 @@ def production_planner():
     return render_template('planner.html')
 
 
+# Login API
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
 
-    # Use stored procedure to get user info
-    cursor.execute("EXEC GetUserLoginDetails ?", (username,))
+    cursor.execute("SELECT id, username, role FROM users WHERE username=? AND password=?", (username, password))
     user = cursor.fetchone()
 
     if user:
-        stored_hash = user[2]  # password column
-
-        if bcrypt.checkpw(password.encode(), stored_hash.encode()):
-            return jsonify({
-                "success": True,
-                "redirect": url_for('dashboard'),
-                "role": user[3]  # role column
-            })
-
-    return jsonify({"success": False, "message": "Invalid credentials"}), 401
-
-
-@app.route('/signup')
-def signup_page():
-    return render_template('signup.html')
-
-
-@app.route('/api/signup', methods=['POST'])
-def signup():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    role = data.get('role')
-
-    if not username or not password or not role:
-        return jsonify({"success": False, "message": "All fields are required."})
-
-    # Hash the password
-    hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-    try:
-        cursor.execute("EXEC RegisterUser ?, ?, ?", (username, hashed_pw, role))
-        conn.commit()
-        return jsonify({"success": True})
-    
-    except pyodbc.Error as e:
-        error_msg = str(e)
-        if "Username already exists" in error_msg:
-            return jsonify({"success": False, "message": "Username already exists."})
-        return jsonify({"success": False, "message": "Signup failed. Try again."})
-
+        return jsonify({
+            "success": True,
+            "redirect": url_for('dashboard'),
+            "role": user.role  # ✅ send role to frontend
+        })
+    else:
+        return jsonify({"success": False, "message": "Invalid username or password"}), 401
 
 
 if __name__ == '__main__':
