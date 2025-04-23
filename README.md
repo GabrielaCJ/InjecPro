@@ -5,7 +5,7 @@ InjecPro is a web-based system developed for plastic injection molding manufactu
 ## 🔧 Technologies Used
 
 - **Frontend**: HTML, Bootstrap, JavaScript  
-- **Backend**: C# (ASP.NET Core)  
+- **Backend**: Python(Flask)  
 - **Database**: SQL Server (SSMS)
 
 ## 📌 Key Features

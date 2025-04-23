@@ -18,7 +18,7 @@
   <nav class="navbar navbar-light bg-white shadow-sm mb-4">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center">
-        <img src="InjecPro-logo.png" alt="InjecPro Logo" class="logo me-2">
+        <img src="{{ url_for('static', filename='InjecPro-logo.png') }}" alt="InjecPro Logo" class="logo me-2" style="height: 50px;">
         <span class="fs-4 fw-bold">Add Product</span>
       </a>
     </div>
@@ -48,18 +48,36 @@
   </div>
 
   <script>
-    document.getElementById("addProductForm").addEventListener("submit", function (e) {
+    document.getElementById("addProductForm").addEventListener("submit", async function (e) {
       e.preventDefault();
-
+  
       const productName = document.getElementById("productName").value;
       const client = document.getElementById("client").value;
 
-      // Send this to your backend to create the product and return the ProductID
-      // Then redirect to calculator page with that ID
-      // Example placeholder logic:
-      alert("Product '" + productName + "' created for client '" + client + "'. Redirecting to calculator...");
-      window.location.href = "cost_calculator.html?productId=1"; // Replace with actual ID from backend
+  
+      try {
+        const res = await fetch("/api/add-product", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ productName, client })
+        });
+  
+        const data = await res.json();
+  
+        if (res.ok && data.success) {
+          // ✅ Redirect with the new Product ID
+          window.location.href = `/cost-calculator?productId=${data.productId}`;
+        } else {
+          alert("Something went wrong while adding the product.");
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        alert("An error occurred while submitting the form.");
+      }
     });
   </script>
+  
 </body>
 </html>

@@ -18,37 +18,57 @@
     }
   </style>
 </head>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const userRole = localStorage.getItem('userRole');
+
+    if (userRole !== 'admin') {
+      // Hide all elements with class 'admin-only'
+      document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = 'none'; // or use el.remove() if you want to remove completely
+      });
+    }
+  });
+</script>
+
 <body>
   <nav class="navbar navbar-light bg-white shadow-sm mb-4">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="#">
-        <img src="InjecPro-logo.png" alt="InjecPro Logo" class="logo me-2">
+        <img src="{{ url_for('static', filename='InjecPro-logo.png') }}" alt="InjecPro Logo" class="logo me-2" style="height: 50px;">
         <span class="fs-4 fw-bold">Dashboard</span>
       </a>
     </div>
   </nav>
-
+  <script>
+    const userRole = localStorage.getItem('userRole');
+  
+    // If not admin, hide all but inventory
+    if (userRole !== 'admin') {
+      document.querySelectorAll(".admin-only").forEach(el => el.remove());
+    }
+  </script>
   <div class="container">
     <div class="row g-4">
-      <div class="col-md-6 col-lg-4">
+      <div class="col-md-6 col-lg-4 admin-only">
         <div class="card p-4 h-100">
           <h5 class="card-title">Product Info & Cost</h5>
           <p class="card-text">Create new or edit existing product cost calculations.</p>
-          <a href="productinfo.html"class="btn btn-primary w-100">Go to Product Cost</a>
+          <a href="{{ url_for('product_info') }}" class="btn btn-primary w-100">Go to Product Cost</a>
         </div>
       </div>
-      <div class="col-md-6 col-lg-4">
+      <div class="col-md-6 col-lg-4 admin-only">
         <div class="card p-4 h-100">
           <h5 class="card-title">Production Planner</h5>
           <p class="card-text">Calculate materials and hours needed for a target quantity.</p>
-          <a href="#" class="btn btn-secondary w-100">Plan Production</a>
+          <a href="{{ url_for('production_planner') }}" class="btn btn-secondary w-100">Plan Production</a>
         </div>
       </div>
       <div class="col-md-6 col-lg-4">
         <div class="card p-4 h-100">
           <h5 class="card-title">Inventory</h5>
-          <p class="card-text">(Coming Soon) Add quantity injected daily base and monitor material stock.</p>
-          <a href="inventory.html" class="btn btn-info w-100 text-white">View Inventory</a>
+          <p class="card-text">Add quantity injected daily base and monitor material stock.</p>
+          <a href="{{ url_for('inventory') }}" class="btn btn-info w-100 text-white">View Inventory</a>
         </div>
       </div>
     </div>
