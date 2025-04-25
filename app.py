@@ -307,6 +307,9 @@ def inventory():
 def production_planner():
     return render_template('planner.html')
 
+@app.route('/signup')
+def signup_page():
+    return render_template('signup.html')
 
 # Login API
 @app.route('/api/login', methods=['POST'])
