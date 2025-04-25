@@ -1,0 +1,27 @@
+.logo {
+    max-width: 350px;
+    height: auto;
+    font-size: large;
+  }
+  .card {
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 500px;
+  }
+  body {
+    background-image: url("/static/login1.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    height: 100vh;
+  }
+  
+  
+  .overlay-card {
+    background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white */
+    border-radius: 10px;
+    padding: 2rem;
+  }
+  
+  
